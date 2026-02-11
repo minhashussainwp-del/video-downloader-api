@@ -1,31 +1,42 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import yt_dlp
 
 app = Flask(__name__)
-CORS(app)
 
-@app.route("/")
+@app.route('/')
 def home():
-    return "API Running"
+    return "✨ Your Video Downloader API is Running ✨"
 
-@app.route("/api")
-def api():
-    url = request.args.get("url")
+@app.route('/api')
+def download_video():
+    url = request.args.get('url')
     if not url:
-        return jsonify({"error":"No URL"}),400
+        return jsonify({"error": "Missing URL parameter"}), 400
 
     try:
-        ydl_opts = {"quiet": True, "skip_download": True}
+        ydl_opts = {
+            'format': 'best',
+            'noplaylist': True,
+            'quiet': True,
+            'skip_download': True,  # skip actual download, return info only
+        }
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(url, download=False)
-
-        return jsonify({
-            "title": info.get("title"),
-            "thumbnail": info.get("thumbnail")
-        })
+            formats = []
+            for f in info.get('formats', []):
+                if f.get('url'):
+                    formats.append({
+                        "format": f.get('format_note', f.get('ext')),
+                        "url": f.get('url')
+                    })
+            data = {
+                "title": info.get('title'),
+                "thumbnail": info.get('thumbnail'),
+                "formats": formats
+            }
+            return jsonify(data)
     except Exception as e:
-        return jsonify({"error": str(e)})
+        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run()
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
