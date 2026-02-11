@@ -1,5 +1,2 @@
-flask
-flask-cors
-yt-dlp
-gunicorn
-
+Flask==2.3.6
+yt-dlp==2026.2.11
